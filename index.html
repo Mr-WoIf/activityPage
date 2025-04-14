@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+        }
+        /* Style for the timeline blocks */
+        .timeline-block {
+            height: 48px; border-radius: 0.25rem; margin-right: 4px; display: inline-flex;
+            flex-direction: column; align-items: center; justify-content: center; color: #4b5563;
+            font-size: 0.75rem; padding: 4px 8px; box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: background-color 0.3s ease; white-space: nowrap; overflow: hidden;
+            text-overflow: ellipsis; max-width: 150px; text-align: center;
+        }
+         .timeline-block-time { font-size: 0.65rem; color: #6b7280; margin-top: 2px; }
+        .timeline-work { background-color: #fef08a; } .timeline-relax { background-color: #fecaca; }
+        .timeline-free { background-color: #bfdbfe; } .timeline-custom { background-color: #e9d5ff; }
+
+        .selected-button { outline: 2px solid #3b82f6; outline-offset: 2px; }
+
+        .todo-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+        .todo-item input[type="checkbox"] { margin-right: 8px; } .todo-item span { flex-grow: 1; outline: none; }
+         .todo-item button { margin-left: 8px; color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 0.25rem; }
+         .todo-item button:hover { background-color: #fee2e2; }
+
+        #timeline::-webkit-scrollbar { height: 8px; }
+        #timeline::-webkit-scrollbar-track { background: #e5e7eb; border-radius: 4px; }
+        #timeline::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
+        #timeline::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+        #date-selector { padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; margin-left: 8px; cursor: pointer; }
+        #date-selector:hover { border-color: #9ca3af; }
+
+        /* MODIFIED: Increased padding and font size */
+        .add-time-btn {
+             background-color: #e5e7eb; color: #374151;
+             font-size: 1rem; /* Increased font size (text-base) */
+             padding: 26px 12px; /* Increased vertical padding */
+             border-radius: 0.375rem; transition: background-color 0.15s ease-in-out;
+             width: 100%;
+             text-align: center;
+        }
+        .add-time-btn:hover { background-color: #d1d5db; }
+
+        .timer-active { background-color: #bfdbfe !important; transition: background-color 0.3s ease; }
+
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-6">
+
+        <div class="mb-6 border-b pb-4">
+            <div class="flex justify-between items-center mb-2">
+                 <h2 class="text-lg font-semibold text-gray-700">
+                    Activity Timeline for: <span id="selected-date-display" class="font-bold text-blue-600"></span>
+                 </h2>
+                 <input type="date" id="date-selector">
+            </div>
+            <div id="timeline" class="w-full bg-gray-100 p-2 rounded overflow-x-auto whitespace-nowrap min-h-[65px]">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+
+            <div class="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div id="timer-display-area" class="flex-1 text-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 transition-colors duration-300">
+                        <div id="activity-display" class="text-xl font-semibold mb-1 text-gray-800 capitalize min-h-[28px]">
+                        </div>
+                        <div id="start-time-display" class="text-sm text-gray-500 mb-2 h-5"></div>
+                        <div id="countdown" class="text-8xl font-bold mb-4 text-blue-600">25:00</div>
+
+                        <div class="flex gap-4 mt-8">
+                            <div class="flex-1 flex flex-col gap-2">
+                                <button id="start-stop-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-12 px-6 rounded-lg transition duration-150 ease-in-out shadow text-6x1">
+                                    Start
+                                </button>
+                                 <button id="reset-btn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-10 px-6 rounded-lg transition duration-150 ease-in-out shadow text-2x1">
+                                    Reset
+                                </button>
+                            </div>
+                            <div class="flex flex-col gap-2 w-28">
+                                <button class="add-time-btn" data-add-time="60">+1m</button>
+                                <button class="add-time-btn" data-add-time="180">+3m</button>
+                                <button class="add-time-btn" data-add-time="300">+5m</button>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div class="flex-shrink-0 bg-white p-4 rounded-lg shadow-sm border border-gray-100 sm:w-36">
+                        <h3 class="font-semibold mb-2 text-gray-700">Duration</h3>
+                        <div id="time-intervals" class="space-y-2">
+                            <button data-time="10" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">10 sec</button>
+                            <button data-time="600" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">10 min</button>
+                            <button data-time="900" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">15 min</button>
+                            <button data-time="1200" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">20 min</button>
+                            <button data-time="1500" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out selected-button">25 min</button>
+                            <button data-time="1800" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">30 min</button>
+                            <button data-time="2700" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">45 min</button>
+                            <button data-time="3600" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">60 min</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                    <h3 class="font-semibold mb-2 text-gray-700">Activity Type</h3>
+                    <div id="activity-types" class="flex flex-wrap gap-2">
+                        <button data-type="work" class="bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out selected-button">Work</button>
+                        <button data-type="relax" class="bg-red-200 hover:bg-red-300 text-red-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Relax</button>
+                        <button data-type="free" class="bg-blue-200 hover:bg-blue-300 text-blue-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Free</button>
+                        <button data-type="custom" class="bg-purple-200 hover:bg-purple-300 text-purple-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Custom</button>
+                    </div>
+                    <div class="mt-3">
+                         <label for="custom-activity-name" class="block text-sm font-medium text-gray-600 mb-1">Custom Activity Name:</label>
+                         <input type="text" id="custom-activity-name" placeholder="e.g., Planning, Reading" class="p-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h3 class="font-semibold mb-3 text-gray-700">What comes to mind?</h3>
+                <div id="todo-list" class="mb-3 max-h-60 overflow-y-auto pr-2">
+                </div>
+                <div class="flex gap-2">
+                    <input type="text" id="new-todo-input" placeholder="Add a quick thought..." class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <button id="add-todo-btn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Add</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            <h2 class="text-lg font-semibold mb-2 text-gray-700">Notes</h2>
+            <textarea id="notes-area" rows="6" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Write your notes here for the selected date..."></textarea>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const timelineDiv = document.getElementById('timeline');
+        const activityDisplay = document.getElementById('activity-display');
+        const startTimeDisplay = document.getElementById('start-time-display');
+        const countdownDisplay = document.getElementById('countdown');
+        const startStopBtn = document.getElementById('start-stop-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const timeIntervalsDiv = document.getElementById('time-intervals');
+        const activityTypesDiv = document.getElementById('activity-types');
+        const customActivityNameInput = document.getElementById('custom-activity-name');
+        const notesArea = document.getElementById('notes-area');
+        const todoListDiv = document.getElementById('todo-list');
+        const newTodoInput = document.getElementById('new-todo-input');
+        const addTodoBtn = document.getElementById('add-todo-btn');
+        const dateSelector = document.getElementById('date-selector');
+        const selectedDateDisplay = document.getElementById('selected-date-display');
+        const timerDisplayArea = document.getElementById('timer-display-area');
+
+        // --- State Variables ---
+        let timerInterval = null;
+        let totalSeconds = 1500;
+        let currentSeconds = totalSeconds;
+        let isRunning = false;
+        let currentActivity = 'work';
+        let currentTimerStartTime = null;
+        let selectedDate = getTodayDateString();
+        let completedActivities = [];
+        let todos = [];
+        let notes = '';
+        let customActivityName = '';
+
+        // --- Constants ---
+        const ACTIVITY_COLORS = { work: 'timeline-work', relax: 'timeline-relax', free: 'timeline-free', custom: 'timeline-custom' };
+        const LOCAL_STORAGE_PREFIX = 'pomodoroAppState_';
+        const GLOBAL_STATE_KEY = 'pomodoroGlobalState';
+
+        // --- Date Helper Functions ---
+        function getTodayDateString() { /* ... */ const today = new Date(); const year = today.getFullYear(); const month = String(today.getMonth() + 1).padStart(2, '0'); const day = String(today.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
+        function formatDateForDisplay(dateString) { /* ... */ const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
+        function formatTimeForDisplay(date) { /* ... */ if (!date) return ''; return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
+
+        // --- Timer Functions ---
+        function formatTime(seconds) { /* ... */ const displaySeconds = Math.max(0, seconds); const mins = Math.floor(displaySeconds / 60); const secs = displaySeconds % 60; return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`; }
+        function updateDisplay() { /* ... */ countdownDisplay.textContent = formatTime(currentSeconds); let displayActivityName = currentActivity; if (currentActivity === 'custom') { const customName = customActivityNameInput.value.trim(); displayActivityName = customName ? customName : 'Custom'; } else { displayActivityName = currentActivity.charAt(0).toUpperCase() + currentActivity.slice(1); } activityDisplay.textContent = displayActivityName; activityDisplay.title = displayActivityName; startTimeDisplay.textContent = isRunning && currentTimerStartTime ? `Started at: ${formatTimeForDisplay(currentTimerStartTime)}` : ''; }
+        function stopTimer(completed = false) { /* ... */ clearInterval(timerInterval); timerInterval = null; isRunning = false; startStopBtn.textContent = 'Start'; startStopBtn.classList.remove('bg-red-500', 'hover:bg-red-600'); startStopBtn.classList.add('bg-blue-500', 'hover:bg-blue-600'); timerDisplayArea.classList.remove('timer-active'); if (completed && totalSeconds > 0) { addActivityToTimeline(currentActivity, totalSeconds, currentTimerStartTime); currentTimerStartTime = null; currentSeconds = totalSeconds; updateDisplay(); } else if (!completed) { startTimeDisplay.textContent = ''; } }
+         function startTimer() { /* ... */ if (isRunning) return; if (currentSeconds <= 0) { currentSeconds = totalSeconds; } if (currentActivity === 'custom' && !customActivityNameInput.value.trim()) { alert("Please enter a name for the custom activity before starting."); customActivityNameInput.focus(); customActivityNameInput.classList.add('border-red-500', 'ring-red-500'); setTimeout(() => { customActivityNameInput.classList.remove('border-red-500', 'ring-red-500'); }, 2000); return; } isRunning = true; if (!currentTimerStartTime) { currentTimerStartTime = new Date(); } startStopBtn.textContent = 'Pause'; startStopBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600'); startStopBtn.classList.add('bg-red-500', 'hover:bg-red-600'); timerDisplayArea.classList.add('timer-active'); updateDisplay(); timerInterval = setInterval(() => { currentSeconds--; updateDisplay(); if (currentSeconds < 0) { stopTimer(true); console.log("Timer finished!"); } }, 1000); }
+        function resetTimer() { /* ... */ stopTimer(false); currentTimerStartTime = null; currentSeconds = totalSeconds; timerDisplayArea.classList.remove('timer-active'); updateDisplay(); }
+        function addTimeToTimer(secondsToAdd) { /* ... */ if (currentSeconds >= 0) { currentSeconds += secondsToAdd; updateDisplay(); } }
+
+        // --- Timeline Functions ---
+        function addActivityToTimeline(activityType, durationSeconds, startTime) { /* ... */ let activityName = activityType; if (activityType === 'custom') { activityName = customActivityNameInput.value.trim() || 'Custom'; } const baseDurationLabel = totalSeconds < 60 ? `${totalSeconds}s` : `${Math.round(totalSeconds / 60)}m`; const activityData = { type: activityType, name: activityName, durationLabel: baseDurationLabel, startTime: startTime ? startTime.toISOString() : new Date().toISOString() }; completedActivities.push(activityData); renderTimeline(); saveStateForDate(selectedDate); }
+        function renderTimeline() { /* ... */ timelineDiv.innerHTML = ''; if (completedActivities.length === 0) { timelineDiv.innerHTML = `<span class="text-gray-500 italic px-2">No activities logged for ${formatDateForDisplay(selectedDate)}.</span>`; } else { completedActivities.sort((a, b) => new Date(a.startTime) - new Date(b.startTime)); completedActivities.forEach(activity => { const block = document.createElement('div'); block.classList.add('timeline-block', ACTIVITY_COLORS[activity.type] || 'bg-gray-300'); const startTimeObj = new Date(activity.startTime); const formattedStartTime = formatTimeForDisplay(startTimeObj); block.innerHTML = `<span>${activity.name} (${activity.durationLabel})</span><span class="timeline-block-time">${formattedStartTime}</span>`; block.title = `${activity.name} (${activity.durationLabel}) - Started: ${formattedStartTime}`; timelineDiv.appendChild(block); }); timelineDiv.scrollLeft = timelineDiv.scrollWidth; } }
+
+        // --- To-Do List Functions ---
+        function renderTodos() { /* ... */ todoListDiv.innerHTML = ''; if (todos.length === 0) { todoListDiv.innerHTML = '<span class="text-gray-500 italic px-1">No quick thoughts added for this date.</span>'; } else { todos.forEach((todo, index) => { const todoItem = document.createElement('div'); todoItem.classList.add('todo-item'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = todo.completed; checkbox.addEventListener('change', () => toggleTodoCompletion(index)); const textSpan = document.createElement('span'); textSpan.textContent = todo.text; textSpan.style.textDecoration = todo.completed ? 'line-through' : 'none'; textSpan.style.color = todo.completed ? '#9ca3af' : 'inherit'; const deleteBtn = document.createElement('button'); deleteBtn.innerHTML = '&times;'; deleteBtn.title = "Delete item"; deleteBtn.addEventListener('click', () => deleteTodoItem(index)); todoItem.appendChild(checkbox); todoItem.appendChild(textSpan); todoItem.appendChild(deleteBtn); todoListDiv.appendChild(todoItem); }); } }
+        function addTodoItem() { /* ... */ const text = newTodoInput.value.trim(); if (text) { todos.push({ text: text, completed: false }); newTodoInput.value = ''; renderTodos(); saveStateForDate(selectedDate); } }
+        function toggleTodoCompletion(index) { /* ... */ if (todos[index]) { todos[index].completed = !todos[index].completed; renderTodos(); saveStateForDate(selectedDate); } }
+        function deleteTodoItem(index) { /* ... */ todos.splice(index, 1); renderTodos(); saveStateForDate(selectedDate); }
+
+        // --- Persistence (localStorage) ---
+        function saveStateForDate(dateString) { /* ... */ const stateForDate = { completedActivities: completedActivities, notes: notesArea.value, todos: todos, customActivityInputValue: customActivityNameInput.value }; const globalState = { selectedTime: totalSeconds, selectedActivity: currentActivity }; try { localStorage.setItem(LOCAL_STORAGE_PREFIX + dateString, JSON.stringify(stateForDate)); localStorage.setItem(GLOBAL_STATE_KEY, JSON.stringify(globalState)); console.log(`State saved for date: ${dateString}`); } catch (e) { console.error("Error saving state:", e); alert("Error saving data."); } }
+        function loadStateForDate(dateString) { /* ... */ console.log(`Loading state for date: ${dateString}`); const savedStateJSON = localStorage.getItem(LOCAL_STORAGE_PREFIX + dateString); const globalStateJSON = localStorage.getItem(GLOBAL_STATE_KEY); if (globalStateJSON) { try { const gs = JSON.parse(globalStateJSON); totalSeconds = gs.selectedTime || 1500; currentActivity = gs.selectedActivity || 'work'; currentSeconds = totalSeconds; updateButtonSelection(timeIntervalsDiv, `[data-time="${totalSeconds}"]`); updateButtonSelection(activityTypesDiv, `[data-type="${currentActivity}"]`); } catch (e) { console.error("Error loading global state:", e); totalSeconds = 1500; currentActivity = 'work'; currentSeconds = totalSeconds; } } else { totalSeconds = 1500; currentActivity = 'work'; currentSeconds = totalSeconds; } if (savedStateJSON) { try { const s = JSON.parse(savedStateJSON); completedActivities = s.completedActivities || []; notes = s.notes || ''; todos = s.todos || []; customActivityName = s.customActivityInputValue || ''; console.log(`State loaded for ${dateString}.`); } catch (e) { console.error(`Error loading state for date ${dateString}:`, e); completedActivities = []; notes = ''; todos = []; customActivityName = ''; } } else { completedActivities = []; notes = ''; todos = []; customActivityName = ''; console.log(`No saved state found for ${dateString}.`); } notesArea.value = notes; customActivityNameInput.value = customActivityName; renderTimeline(); renderTodos(); updateDisplay(); }
+
+        // --- Event Listeners ---
+        startStopBtn.addEventListener('click', () => { if (isRunning) { stopTimer(false); } else { startTimer(); } });
+        resetBtn.addEventListener('click', resetTimer);
+        function updateButtonSelection(container, selector) { /* ... */ container.querySelectorAll('button').forEach(btn => btn.classList.remove('selected-button')); const buttonToSelect = container.querySelector(selector); if (buttonToSelect) { buttonToSelect.classList.add('selected-button'); } }
+        timeIntervalsDiv.addEventListener('click', (e) => { /* ... */ if (e.target.tagName === 'BUTTON' && e.target.dataset.time && !isRunning) { totalSeconds = parseInt(e.target.dataset.time, 10); currentSeconds = totalSeconds; updateDisplay(); updateButtonSelection(timeIntervalsDiv, `[data-time="${totalSeconds}"]`); saveStateForDate(selectedDate); } else if (isRunning) { console.log("Stop timer to change duration."); } });
+        activityTypesDiv.addEventListener('click', (e) => { /* ... */ if (e.target.tagName === 'BUTTON' && e.target.dataset.type) { currentActivity = e.target.dataset.type; updateDisplay(); updateButtonSelection(activityTypesDiv, `[data-type="${currentActivity}"]`); if (currentActivity === 'custom') { customActivityNameInput.focus(); } saveStateForDate(selectedDate); } });
+        customActivityNameInput.addEventListener('input', () => { /* ... */ if (currentActivity === 'custom') { updateDisplay(); } /* Debounced save */ let customNameTimeout; clearTimeout(customNameTimeout); customNameTimeout = setTimeout(() => saveStateForDate(selectedDate), 500); });
+        let notesTimeout; notesArea.addEventListener('input', () => { /* ... */ clearTimeout(notesTimeout); notesTimeout = setTimeout(() => saveStateForDate(selectedDate), 500); });
+        addTodoBtn.addEventListener('click', addTodoItem);
+        newTodoInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { addTodoItem(); } });
+        dateSelector.addEventListener('change', (e) => { /* ... */ if (isRunning) { alert("Please stop the current timer before changing the date."); e.target.value = selectedDate; return; } const newDate = e.target.value; if (newDate) { selectedDate = newDate; selectedDateDisplay.textContent = formatDateForDisplay(selectedDate); resetTimer(); loadStateForDate(selectedDate); } });
+        timerDisplayArea.addEventListener('click', (e) => { /* ... */ if (e.target.classList.contains('add-time-btn') && e.target.dataset.addTime) { addTimeToTimer(parseInt(e.target.dataset.addTime, 10)); } });
+
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => { /* ... */ selectedDate = getTodayDateString(); dateSelector.value = selectedDate; dateSelector.max = selectedDate; selectedDateDisplay.textContent = formatDateForDisplay(selectedDate); loadStateForDate(selectedDate); });
+
+    </script>
+
+</body>
+</html>
