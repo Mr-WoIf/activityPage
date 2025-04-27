@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Pomodoro Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -14,9 +14,15 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f3f4f6; /* Light gray background */
-            transition: background-color 0.3s ease; /* Smooth transition for flash */
+            transition: background-color 0.2s ease-out; /* Transition for flash */
         }
-        /* Style for the timeline blocks */
+        /* ADDED: Screen flash style */
+        body.screen-flash {
+            /* Change this background-color value to customize the flash color */
+            background-color: #ef4444 !important; /* Bright red flash color (Tailwind red-500) */
+        }
+
+        /* Styles for the timeline blocks */
         .timeline-block {
             height: 48px; border-radius: 0.25rem; margin-right: 4px; display: inline-flex;
             flex-direction: column; align-items: center; justify-content: center; color: #4b5563;
@@ -24,82 +30,68 @@
             transition: background-color 0.3s ease; white-space: nowrap; overflow: hidden;
             text-overflow: ellipsis; max-width: 150px; text-align: center;
         }
-        .timeline-block-time { font-size: 0.65rem; color: #6b7280; margin-top: 2px; }
+         .timeline-block-time { font-size: 0.65rem; color: #6b7280; margin-top: 2px; }
         .timeline-work { background-color: #fef08a; } .timeline-relax { background-color: #fecaca; }
         .timeline-free { background-color: #bfdbfe; } .timeline-custom { background-color: #e9d5ff; }
 
+        /* Style for selected duration/activity buttons */
         .selected-button { outline: 2px solid #3b82f6; outline-offset: 2px; }
 
+        /* Styles for the To-Do list items */
         .todo-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
-        .todo-item input[type="checkbox"] { margin-right: 8px; flex-shrink: 0; } .todo-item span { flex-grow: 1; outline: none; word-break: break-word; }
-        .todo-item button { margin-left: 8px; color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 0.25rem; flex-shrink: 0; }
-        .todo-item button:hover { background-color: #fee2e2; }
+        .todo-item input[type="checkbox"] { margin-right: 8px; } .todo-item span { flex-grow: 1; outline: none; }
+         .todo-item button { margin-left: 8px; color: #ef4444; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 0.25rem; }
+         .todo-item button:hover { background-color: #fee2e2; }
 
+        /* Custom scrollbar for the timeline */
         #timeline::-webkit-scrollbar { height: 8px; }
         #timeline::-webkit-scrollbar-track { background: #e5e7eb; border-radius: 4px; }
         #timeline::-webkit-scrollbar-thumb { background: #9ca3af; border-radius: 4px; }
         #timeline::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
-        #date-selector { padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; cursor: pointer; }
+        /* Style for the date picker input */
+        #date-selector { padding: 4px 8px; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; margin-left: 8px; cursor: pointer; }
         #date-selector:hover { border-color: #9ca3af; }
-        #date-activity-indicator { font-size: 1.2rem; line-height: 1; color: #3b82f6; margin-left: 5px; display: inline-block; vertical-align: middle; min-width: 10px; text-align: center; }
 
+        /* Style for the "+ Time" buttons */
         .add-time-btn {
              background-color: #e5e7eb; color: #374151;
-             padding: 22px 12px; /* Increased vertical padding */
-             border-radius: 0.375rem; transition: background-color 0.15s ease-in-out;
-             width: 100%;
-             text-align: center;
+             padding: 22px 12px; border-radius: 0.375rem; transition: background-color 0.15s ease-in-out;
+             width: 100%; text-align: center;
         }
         .add-time-btn:hover { background-color: #d1d5db; }
 
+        /* Style for the timer display area when timer is running */
         .timer-active { background-color: #bfdbfe !important; transition: background-color 0.3s ease; }
 
-        /* NEW: Style for screen flash */
-        .screen-flash {
-             background-color: #FF4136 !important; /* Bright red - CHANGE THIS COLOR IF NEEDED */
+        /* Style for the sound toggle button */
+        #sound-toggle {
+            position: absolute; top: 10px; left: 10px; background: none; border: none;
+            padding: 4px; cursor: pointer; color: #9ca3af; border-radius: 50%;
         }
+        #sound-toggle:hover { background-color: #f3f4f6; }
+        #sound-toggle.enabled { color: #3b82f6; } /* Blue when enabled */
+        #sound-toggle svg { width: 20px; height: 20px; display: block; }
 
-        /* NEW: Alarm toggle style */
-        #alarm-toggle {
-            background: none; border: none; cursor: pointer; font-size: 1.5rem; padding: 0 5px; vertical-align: middle; color: #6b7280;
-        }
-        #alarm-toggle.enabled { color: #3b82f6; }
-
-        /* NEW: Styles for split reset/stop buttons */
-        .control-button-small {
-            padding: 10px 15px; /* Adjust padding */
-            font-size: 1rem; /* Adjust font size */
-            font-weight: 600;
-            border-radius: 0.375rem;
-            transition: background-color 0.15s ease-in-out;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            color: white;
-            flex: 1; /* Make buttons share space */
-            text-align: center;
-        }
+         /* Style for the date markers area below date picker */
+         #date-markers { font-size: 0.75rem; color: #6b7280; margin-top: 4px; padding-left: 2px; }
+         #date-markers span { display: inline-block; margin-right: 8px; background-color: #e5e7eb; padding: 2px 6px; border-radius: 0.25rem; }
 
     </style>
 </head>
 <body class="p-4 md:p-8">
 
-    <audio id="alarm-sound" preload="auto">
-        <source src="data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU..." type="audio/wav"> <source src="data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA" type="audio/wav">
-        Your browser does not support the audio element.
-    </audio>
-
-    <div class="max-w-screen-xl mx-auto bg-white rounded-lg shadow-lg p-6">
+    <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-6">
 
         <div class="mb-6 border-b pb-4">
             <div class="flex justify-between items-center mb-2">
-                <h2 class="text-lg font-semibold text-gray-700">
+                 <h2 class="text-lg font-semibold text-gray-700">
                     Activity Timeline for: <span id="selected-date-display" class="font-bold text-blue-600"></span>
-                </h2>
-                <div>
-                    <input type="date" id="date-selector">
-                    <span id="date-activity-indicator" title="Indicates if data exists for this date"></span> </div>
+                 </h2>
+                 <input type="date" id="date-selector">
             </div>
-            <div id="timeline" class="w-full bg-gray-100 p-2 rounded overflow-x-auto whitespace-nowrap min-h-[65px]">
+             <div id="date-markers">Loading markers...</div>
+            <div id="timeline" class="w-full bg-gray-100 p-2 rounded overflow-x-auto whitespace-nowrap min-h-[65px] mt-2">
                 </div>
         </div>
 
@@ -107,45 +99,38 @@
 
             <div class="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <div class="flex flex-col sm:flex-row gap-4">
-                    <div id="timer-display-area" class="flex-1 text-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 transition-colors duration-300">
+                    <div id="timer-display-area" class="relative flex-1 text-center bg-white p-4 rounded-lg shadow-sm border border-gray-100 transition-colors duration-300">
+                        <button id="sound-toggle" title="Toggle sound notification">
+                            </button>
+
                         <div id="activity-display" class="text-xl font-semibold mb-1 text-gray-800 capitalize min-h-[28px]">
                             </div>
-                        <div id="start-time-display" class="text-sm text-gray-500 mb-2 h-5"></div>
+                        <div id="start-time-display" class="text-sm text-gray-500 mb-2 h-5">
+                            </div>
                         <div id="countdown" class="text-8xl font-bold mb-4 text-blue-600">25:00</div>
 
                         <div class="flex gap-4 mt-8">
                             <div class="flex-1 flex flex-col gap-2">
-                                <button id="start-stop-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-11 px-6 rounded-lg transition duration-150 ease-in-out shadow text-5xl">
-                                    Start
-                                </button>
-                                <div class="flex gap-2 mt-2">
-                                    <button id="reset-btn" class="control-button-small bg-gray-500 hover:bg-gray-600">
+                                <button id="start-stop-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-10 px-6 rounded-lg transition duration-150 ease-in-out shadow text-5xl">
+                                    Start </button>
+                                <div class="flex gap-2">
+                                     <button id="reset-timer-btn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-bold py-8 px-2 rounded-lg transition duration-150 ease-in-out shadow text-2xl">
                                         Reset
                                     </button>
-                                    <button id="stop-log-btn" class="control-button-small bg-yellow-500 hover:bg-yellow-600">
-                                        Stop & Log
-                                    </button>
+                                    <button id="stop-early-btn" class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-8 px-6 rounded-lg transition duration-150 ease-in-out shadow text-3xl">
+                                        Stop </button>
                                 </div>
                             </div>
                             <div class="flex flex-col gap-2 w-28">
-                                <button class="add-time-btn font-bold text-2xl" data-add-time="60">+1m</button>
-                                <button class="add-time-btn font-bold text-2xl" data-add-time="180">+3m</button>
-                                <button class="add-time-btn font-bold text-2xl" data-add-time="300">+5m</button>
-                           </div>
+                                <button class="add-time-btn font-bold text-xl" data-add-time="60">+1m</button>
+                                <button class="add-time-btn font-bold text-xl" data-add-time="180">+3m</button>
+                                <button class="add-time-btn font-bold text-xl" data-add-time="300">+5m</button>
+                             </div>
                         </div>
-                    </div>
-
-                    <div class="flex-shrink-0 bg-white p-4 rounded-lg shadow-sm border border-gray-100 sm:w-48"> {/* Increased width slightly */}
-                        <div class="flex justify-between items-center mb-2"> {/* NEW: Flex container for heading and toggle */}
-                            <h3 class="font-semibold text-gray-700">Duration</h3>
-                             {/* NEW: Alarm Toggle Button */}
-                             <button id="alarm-toggle" title="Toggle Alarm Sound">
-                                 <span class="icon-muted">🔈</span>
-                                 <span class="icon-active" style="display: none;">🔊</span>
-                            </button>
-                        </div>
+                    </div> <div class="flex-shrink-0 bg-white p-4 rounded-lg shadow-sm border border-gray-100 sm:w-36">
+                        <h3 class="font-semibold mb-2 text-gray-700">Duration</h3>
                         <div id="time-intervals" class="space-y-2">
-                            <button data-time="300" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">5 min</button>
+                            <button data-time="10" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">10 sec</button>
                             <button data-time="600" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">10 min</button>
                             <button data-time="900" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">15 min</button>
                             <button data-time="1200" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">20 min</button>
@@ -155,9 +140,7 @@
                             <button data-time="3600" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">60 min</button>
                         </div>
                     </div>
-                </div>
-
-                <div class="mt-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
+                </div> <div class="mt-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
                     <h3 class="font-semibold mb-2 text-gray-700">Activity Type</h3>
                     <div id="activity-types" class="flex flex-wrap gap-2">
                         <button data-type="work" class="bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out selected-button">Work</button>
@@ -170,9 +153,7 @@
                          <input type="text" id="custom-activity-name" placeholder="e.g., Planning, Reading" class="p-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
-            </div>
-
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            </div> <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h3 class="font-semibold mb-3 text-gray-700">What comes to mind?</h3>
                 <div id="todo-list" class="mb-3 max-h-60 overflow-y-auto pr-2">
                     </div>
@@ -180,25 +161,20 @@
                     <input type="text" id="new-todo-input" placeholder="Add a quick thought..." class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                     <button id="add-todo-btn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Add</button>
                 </div>
-            </div>
-        </div>
-
-        <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+            </div> </div> <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
             <h2 class="text-lg font-semibold mb-2 text-gray-700">Notes</h2>
             <textarea id="notes-area" rows="6" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Write your notes here for the selected date..."></textarea>
         </div>
 
-    </div>
-
-    <script>
+    </div> <script>
         // --- DOM Elements ---
         const timelineDiv = document.getElementById('timeline');
         const activityDisplay = document.getElementById('activity-display');
         const startTimeDisplay = document.getElementById('start-time-display');
         const countdownDisplay = document.getElementById('countdown');
         const startStopBtn = document.getElementById('start-stop-btn');
-        const resetBtn = document.getElementById('reset-btn');
-        const stopLogBtn = document.getElementById('stop-log-btn'); // NEW: Stop & Log button
+        const resetTimerBtn = document.getElementById('reset-timer-btn'); // Renamed
+        const stopEarlyBtn = document.getElementById('stop-early-btn');   // New button
         const timeIntervalsDiv = document.getElementById('time-intervals');
         const activityTypesDiv = document.getElementById('activity-types');
         const customActivityNameInput = document.getElementById('custom-activity-name');
@@ -209,598 +185,470 @@
         const dateSelector = document.getElementById('date-selector');
         const selectedDateDisplay = document.getElementById('selected-date-display');
         const timerDisplayArea = document.getElementById('timer-display-area');
-        const bodyElement = document.body; // NEW: Body element for flashing
-        const alarmSound = document.getElementById('alarm-sound'); // NEW: Alarm sound element
-        const alarmToggleBtn = document.getElementById('alarm-toggle'); // NEW: Alarm toggle button
-        const dateActivityIndicator = document.getElementById('date-activity-indicator'); // NEW: Date activity indicator span
+        const soundToggleBtn = document.getElementById('sound-toggle');
+        const dateMarkersDiv = document.getElementById('date-markers');
 
         // --- State Variables ---
         let timerInterval = null;
-        let totalSeconds = 1500; // Default duration
-        let currentSeconds = totalSeconds;
+        let totalSeconds = 1500; // Base duration selected by user
+        let currentSeconds = totalSeconds; // Current countdown value
         let isRunning = false;
-        let currentActivity = 'work'; // Default activity
-        let currentTimerStartTime = null; // Stores the actual Date object when timer starts
-        let selectedDate = getTodayDateString();
-        let completedActivities = []; // For the selected date
-        let todos = []; // For the selected date
-        let notes = ''; // For the selected date
-        let customActivityName = ''; // For the selected date
-        let isAlarmEnabled = true; // NEW: Alarm state
-        let datesWithActivity = []; // NEW: List of dates with any saved activity (for marker)
-        let audioContextUnlocked = false; // NEW: Track if user interaction allowed audio
+        let currentActivity = 'work';
+        let currentTimerStartTime = null; // Timestamp when the current timer segment started
+        let selectedDate = getTodayDateString(); // YYYY-MM-DD format
+        let completedActivities = []; // Holds { type, name, durationLabel, startTime } for the selected date
+        let todos = []; // Holds { text, completed } for the selected date
+        let notes = ''; // Holds notes text for the selected date
+        let customActivityName = ''; // Holds custom activity name for the selected date
+        let isSoundEnabled = true; // Sound notification state
+        let alarmSynth = null; // Tone.js synth instance
 
         // --- Constants ---
         const ACTIVITY_COLORS = { work: 'timeline-work', relax: 'timeline-relax', free: 'timeline-free', custom: 'timeline-custom' };
-        const LOCAL_STORAGE_PREFIX = 'pomodoroAppState_'; // Per-date state
-        const GLOBAL_STATE_KEY = 'pomodoroGlobalState'; // Global settings
+        const LOCAL_STORAGE_PREFIX = 'pomodoroAppState_'; // Prefix for daily data keys
+        const GLOBAL_STATE_KEY = 'pomodoroGlobalState'; // Key for global settings
+        const SCREEN_FLASH_DURATION = 3000; // Milliseconds for screen flash
+        // SVG Icons for sound toggle button
+        const SOUND_ON_ICON = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" /></svg>`;
+        const SOUND_OFF_ICON = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17.25 9.75 19.5 12m0 0 2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6 4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" /></svg>`;
+
+        // --- Tone.js Setup ---
+        /**
+         * Initializes the Tone.js synthesizer for the alarm sound.
+         * Attempts to start the audio context if not already running.
+         */
+        function setupAlarmSynth() {
+            try {
+                if (Tone.context.state !== 'running') {
+                    // Tone.start() returns a Promise that resolves when the context is running.
+                    Tone.start().then(() => {
+                        console.log("Audio context started by Tone.js");
+                        // Create the synth *after* the context is confirmed running.
+                        if (!alarmSynth) { // Avoid creating multiple synths
+                           alarmSynth = new Tone.Synth().toDestination();
+                        }
+                    }).catch(e => console.error("Error starting Tone.js audio context:", e));
+                } else {
+                    // If context is already running, just create the synth.
+                    if (!alarmSynth) {
+                       alarmSynth = new Tone.Synth().toDestination();
+                    }
+                }
+            } catch (e) {
+                 console.error("Error setting up Tone.js synth:", e);
+                 // Handle potential errors during synth creation
+            }
+        }
+
+        /**
+         * Plays the alarm sound if enabled and the synth is ready.
+         */
+        function playAlarmSound() {
+             if (isSoundEnabled && alarmSynth && Tone.context.state === 'running') {
+                 try {
+                     alarmSynth.triggerAttackRelease("C5", "0.5s", Tone.now()); // Use Tone.now() for precise timing
+                     console.log("Alarm played");
+                 } catch (e) {
+                      console.error("Error playing alarm sound:", e);
+                 }
+             } else if (!isSoundEnabled) {
+                 console.log("Sound is disabled.");
+             } else {
+                 console.warn("Could not play alarm: Synth not ready or audio context not running.");
+                 // Optionally try to start context again if needed (might require user interaction)
+                 if (Tone.context.state !== 'running') {
+                     Tone.start().then(() => {
+                         console.log("Audio context started on demand for alarm.");
+                         if (!alarmSynth) alarmSynth = new Tone.Synth().toDestination();
+                         if (isSoundEnabled && alarmSynth) alarmSynth.triggerAttackRelease("C5", "0.5s", Tone.now());
+                     }).catch(e => console.error("Error starting Tone.js audio context on demand:", e));
+                 }
+             }
+        }
+
+        // --- Screen Flash ---
+        /**
+         * Adds a CSS class to the body for a short duration to flash the background.
+         */
+        function flashScreen() {
+            document.body.classList.add('screen-flash');
+            setTimeout(() => {
+                document.body.classList.remove('screen-flash');
+            }, SCREEN_FLASH_DURATION);
+        }
 
         // --- Date Helper Functions ---
+        /** Gets today's date as a YYYY-MM-DD string. */
         function getTodayDateString() { const today = new Date(); const year = today.getFullYear(); const month = String(today.getMonth() + 1).padStart(2, '0'); const day = String(today.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
+        /** Formats a YYYY-MM-DD string for display (e.g., "Monday, April 28, 2025"). */
         function formatDateForDisplay(dateString) { const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
+        /** Formats a Date object for time display (e.g., "01:15 PM"). */
         function formatTimeForDisplay(date) { if (!date) return ''; return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
 
         // --- Timer Functions ---
+        /** Formats seconds into MM:SS format. */
         function formatTime(seconds) { const displaySeconds = Math.max(0, seconds); const mins = Math.floor(displaySeconds / 60); const secs = displaySeconds % 60; return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`; }
-        function updateDisplay() {
-            countdownDisplay.textContent = formatTime(currentSeconds);
-            let displayActivityName = currentActivity;
-            if (currentActivity === 'custom') {
-                const customName = customActivityNameInput.value.trim();
-                displayActivityName = customName ? customName : 'Custom';
-            } else {
-                displayActivityName = currentActivity.charAt(0).toUpperCase() + currentActivity.slice(1);
-            }
-            activityDisplay.textContent = displayActivityName;
-            activityDisplay.title = displayActivityName; // Tooltip for long names
-            startTimeDisplay.textContent = isRunning && currentTimerStartTime ? `Started at: ${formatTimeForDisplay(currentTimerStartTime)}` : '';
-        }
+        /** Updates the timer display, activity name, and start time. */
+        function updateDisplay() { countdownDisplay.textContent = formatTime(currentSeconds); let displayActivityName = currentActivity; if (currentActivity === 'custom') { const customName = customActivityNameInput.value.trim(); displayActivityName = customName ? customName : 'Custom'; } else { displayActivityName = currentActivity.charAt(0).toUpperCase() + currentActivity.slice(1); } activityDisplay.textContent = displayActivityName; activityDisplay.title = displayActivityName; startTimeDisplay.textContent = isRunning && currentTimerStartTime ? `Started at: ${formatTimeForDisplay(currentTimerStartTime)}` : ''; }
 
-        // NEW: Function to attempt unlocking audio context
-        function unlockAudio() {
-            if (!audioContextUnlocked && alarmSound.paused) {
-                alarmSound.play().then(() => {
-                    alarmSound.pause();
-                    audioContextUnlocked = true;
-                    console.log("Audio context unlocked.");
-                }).catch(error => {
-                    console.warn("Audio unlock failed (likely needs more user interaction):", error);
-                    // Optional: Provide feedback to the user that sound might not work yet
-                });
-            }
-        }
-
-
-        function stopTimer(completed = false) {
+        /**
+         * Stops the timer interval and handles logging based on how it stopped.
+         * @param {boolean} completed - True if the timer reached 0 naturally.
+         * @param {boolean} stoppedEarly - True if the "Stop" button was pressed.
+         * @param {number} elapsedSeconds - The actual time elapsed if stopped early.
+         */
+        function stopTimer(completed = false, stoppedEarly = false, elapsedSeconds = 0) {
             clearInterval(timerInterval);
             timerInterval = null;
             isRunning = false;
             startStopBtn.textContent = 'Start';
             startStopBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
             startStopBtn.classList.add('bg-blue-500', 'hover:bg-blue-600');
-            timerDisplayArea.classList.remove('timer-active');
+            timerDisplayArea.classList.remove('timer-active'); // Remove active background
 
-            if (completed) {
-                 // NEW: Flash screen
-                 bodyElement.classList.add('screen-flash');
-                 setTimeout(() => {
-                     bodyElement.classList.remove('screen-flash');
-                 }, 3000); // Flash duration: 3 seconds
-
-                 // NEW: Play sound if enabled
-                 if (isAlarmEnabled) {
-                     alarmSound.currentTime = 0; // Rewind sound
-                     alarmSound.play().catch(e => console.error("Error playing sound:", e));
-                 }
-
-                // Log the activity only if the timer completed naturally AND duration was > 0
-                if (totalSeconds > 0) {
-                    // Pass totalSeconds as the actual duration when timer completes naturally
-                    addActivityToTimeline(currentActivity, totalSeconds, currentTimerStartTime);
-                }
-                currentTimerStartTime = null; // Reset start time for next run
-                currentSeconds = totalSeconds; // Reset countdown for next run
-                updateDisplay(); // Update display to show full time again
-            } else {
-                // If stopped manually (not reset), keep the start time displayed until reset
-                // startTimeDisplay.textContent = ''; // Don't clear start time display here
+            if (completed && totalSeconds > 0) {
+                // Timer completed naturally
+                console.log("Timer completed naturally.");
+                addActivityToTimeline(currentActivity, totalSeconds, currentTimerStartTime);
+                playAlarmSound();
+                flashScreen();
+                currentTimerStartTime = null; // Clear start time for next run
+                currentSeconds = totalSeconds; // Reset timer to base duration
+                updateDisplay();
+            } else if (stoppedEarly && currentTimerStartTime) {
+                 // Timer stopped early via "Stop" button
+                 console.log(`Timer stopped early after ${elapsedSeconds} seconds.`);
+                 addActivityToTimeline(currentActivity, elapsedSeconds, currentTimerStartTime, true); // Log elapsed time
+                 currentTimerStartTime = null; // Clear start time for next run
+                 currentSeconds = totalSeconds; // Reset timer display to base duration
+                 updateDisplay();
+            } else if (!completed && !stoppedEarly) {
+                 // Timer paused manually via "Pause" button
+                 console.log("Timer paused.");
+                 startTimeDisplay.textContent = ''; // Clear start time display, but keep internal variable
             }
-             // Always update display after stopping, even if not completed
-            updateDisplay();
+            // If stopped early without a start time (shouldn't happen with current logic, but safe)
+            else if (stoppedEarly && !currentTimerStartTime) {
+                 console.warn("Stop early pressed, but no start time recorded.");
+                 currentSeconds = totalSeconds; // Reset timer display
+                 updateDisplay();
+            }
         }
 
-        function startTimer() {
-            if (isRunning) return;
-            // Ensure audio context is ready (important for some browsers)
-            unlockAudio();
-
-            if (currentSeconds <= 0) { // If timer was at 00:00, reset to full duration
-                currentSeconds = totalSeconds;
-            }
-
-            // Validation for custom activity name
-            if (currentActivity === 'custom' && !customActivityNameInput.value.trim()) {
-                alert("Please enter a name for the custom activity before starting.");
-                customActivityNameInput.focus();
-                customActivityNameInput.classList.add('border-red-500', 'ring-red-500');
-                setTimeout(() => {
-                    customActivityNameInput.classList.remove('border-red-500', 'ring-red-500');
-                }, 2000);
-                return;
-            }
+        /** Starts the timer interval or resumes it. */
+         function startTimer() {
+            if (isRunning) return; // Prevent multiple intervals
+            // If starting from 0 (after completion or reset), ensure it's set to base duration
+            if (currentSeconds <= 0) { currentSeconds = totalSeconds; }
+            // Check for custom activity name if 'custom' is selected
+            if (currentActivity === 'custom' && !customActivityNameInput.value.trim()) { alert("Please enter a name for the custom activity before starting."); customActivityNameInput.focus(); customActivityNameInput.classList.add('border-red-500', 'ring-red-500'); setTimeout(() => { customActivityNameInput.classList.remove('border-red-500', 'ring-red-500'); }, 2000); return; }
 
             isRunning = true;
-            if (!currentTimerStartTime) { // Only set a new start time if it wasn't already set (e.g., after pausing)
-                currentTimerStartTime = new Date();
-            }
+            // Record start time only if it's a fresh start (not resuming pause)
+            if (!currentTimerStartTime) { currentTimerStartTime = new Date(); }
 
-            startStopBtn.textContent = 'Pause';
-            startStopBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600');
-            startStopBtn.classList.add('bg-red-500', 'hover:bg-red-600');
-            timerDisplayArea.classList.add('timer-active');
+            startStopBtn.textContent = 'Pause'; // Change button text
+            startStopBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600'); startStopBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+            timerDisplayArea.classList.add('timer-active'); // Add visual indicator
             updateDisplay(); // Update display immediately
 
+            // Start the interval
             timerInterval = setInterval(() => {
                 currentSeconds--;
-                updateDisplay();
-                if (currentSeconds < 0) { // Use < 0 to ensure the 00:00 state is shown before stopping
-                    stopTimer(true); // Timer finished naturally
+                updateDisplay(); // Update countdown display
+                // Check if timer reached zero
+                if (currentSeconds < 0) {
+                    stopTimer(true); // Call stopTimer indicating natural completion
                     console.log("Timer finished!");
                 }
             }, 1000);
         }
 
-        function resetTimer() {
-            stopTimer(false); // Stop without marking as completed or logging
-            currentTimerStartTime = null; // Clear the start time
-            currentSeconds = totalSeconds; // Reset countdown to full duration
-            timerDisplayArea.classList.remove('timer-active'); // Ensure active style is removed
-            updateDisplay(); // Update display to show full time
-            console.log("Timer reset.");
+        /** Resets the timer display and internal state to the selected base duration. */
+        function resetTimerDisplayAndState() {
+             stopTimer(false); // Stop interval without logging
+             currentTimerStartTime = null; // Clear any recorded start time
+             currentSeconds = totalSeconds; // Reset countdown to base duration
+             timerDisplayArea.classList.remove('timer-active'); // Ensure active state is removed
+             updateDisplay(); // Update the display
+             console.log("Timer reset to base duration.");
         }
 
-        // NEW: Function to stop the timer and log the elapsed time
-        function stopAndLogTimer() {
-            if (!isRunning) {
-                console.log("Timer not running, cannot stop and log.");
-                return; // Do nothing if timer isn't running
-            }
-
-            const elapsedSeconds = totalSeconds - currentSeconds; // Calculate time spent
-            // Ensure elapsed time is not negative if timer went past 0 somehow
-            const actualDuration = Math.max(0, elapsedSeconds);
-
-            stopTimer(false); // Stop the interval, don't trigger completion effects
-
-            if (actualDuration > 0 && currentTimerStartTime) {
-                addActivityToTimeline(currentActivity, actualDuration, currentTimerStartTime);
-                console.log(`Logged ${formatDurationLabel(actualDuration)} of ${currentActivity}.`);
-            } else {
-                console.log("No time elapsed or timer not started, nothing logged.");
-            }
-
-            // Reset timer state for the next run
-            currentTimerStartTime = null;
-            currentSeconds = totalSeconds;
-            updateDisplay();
-        }
-
+        /** Adds the specified number of seconds to the current countdown. */
         function addTimeToTimer(secondsToAdd) {
-            if (currentSeconds >= 0) { // Allow adding time even when paused or at 00:00
+            if (currentSeconds >= 0) { // Allow adding time even if paused at 0
                 currentSeconds += secondsToAdd;
-                // If timer wasn't running but had reached 0, adding time means it should now show > 0
-                if (!isRunning && currentSeconds > 0 && countdownDisplay.textContent === "00:00") {
-                     currentTimerStartTime = null; // Clear start time as it's effectively reset
-                }
-                 // Also adjust totalSeconds if the timer is NOT running, so the *next* full run uses the extended time.
-                if (!isRunning) {
-                    totalSeconds += secondsToAdd;
-                     // Update the selected button visually
-                     updateButtonSelection(timeIntervalsDiv, `[data-time="${totalSeconds}"]`);
-                     // If no exact match, deselect all duration buttons
-                     if (!timeIntervalsDiv.querySelector(`[data-time="${totalSeconds}"]`)) {
-                         updateButtonSelection(timeIntervalsDiv, null); // Deselect all
-                     }
-                     saveGlobalState(); // Save the new default duration
-                }
-                updateDisplay();
+                updateDisplay(); // Update countdown display immediately
+                console.log(`Added ${secondsToAdd} seconds.`);
             }
         }
 
         // --- Timeline Functions ---
-
-        // NEW: Helper to format duration label more dynamically
-        function formatDurationLabel(seconds) {
-            if (seconds < 60) {
-                return `${seconds}s`;
-            }
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            if (mins < 60) { // Less than an hour
-                 return secs > 0 ? `${mins}m ${secs}s` : `${mins}m`;
-            }
-            // For longer durations, just show rounded minutes for simplicity in the block
-            return `${Math.round(seconds / 60)}m`;
-        }
-
-        function addActivityToTimeline(activityType, actualDurationSeconds, startTimeDate) {
+        /**
+         * Adds an activity record to the timeline data for the current date.
+         * @param {string} activityType - The type ('work', 'relax', 'custom', etc.).
+         * @param {number} durationOrElapsedSeconds - Base duration (if completed) or actual elapsed seconds (if stopped early).
+         * @param {Date} startTime - The Date object representing when the timer segment started.
+         * @param {boolean} earlyStop - Flag indicating if the timer was stopped early.
+         */
+        function addActivityToTimeline(activityType, durationOrElapsedSeconds, startTime, earlyStop = false) {
             let activityName = activityType;
             if (activityType === 'custom') {
-                activityName = customActivityNameInput.value.trim() || 'Custom'; // Use saved custom name if available
-            } else {
-                activityName = activityType.charAt(0).toUpperCase() + activityType.slice(1);
+                activityName = customActivityNameInput.value.trim() || 'Custom'; // Use input or default
             }
 
-            // Use the actual duration for the label
-            const durationLabel = formatDurationLabel(actualDurationSeconds);
+             // Format the duration label correctly (e.g., "25m", "47s")
+             let durationLabel = '';
+             const seconds = Math.round(durationOrElapsedSeconds); // Use the passed duration/elapsed time
+             if (seconds < 60) {
+                 durationLabel = `${seconds}s`;
+             } else {
+                 // Display minutes, rounding might be suitable for longer durations
+                 durationLabel = `${Math.round(seconds / 60)}m`;
+             }
 
             const activityData = {
-                type: activityType, // 'work', 'relax', 'free', 'custom'
-                name: activityName, // Actual name displayed (could be custom)
-                durationLabel: durationLabel, // Formatted duration string (e.g., "25m", "12m 3s")
-                actualDuration: actualDurationSeconds, // Store raw seconds
-                startTime: startTimeDate ? startTimeDate.toISOString() : new Date().toISOString() // Store start time as ISO string
+                type: activityType,
+                name: activityName,
+                durationLabel: durationLabel, // Use the calculated label reflecting actual time if stopped early
+                startTime: startTime ? startTime.toISOString() : new Date().toISOString() // Store start time as ISO string
             };
-
-            completedActivities.push(activityData);
-            renderTimeline();
-            saveStateForDate(selectedDate); // Save state for the current date
+            completedActivities.push(activityData); // Add to the array for the current date
+            renderTimeline(); // Update the visual timeline
+            saveStateForDate(selectedDate); // Save updated state (implicitly updates markers)
         }
 
+        /** Renders the timeline blocks based on the completedActivities array for the selected date. */
         function renderTimeline() {
-            timelineDiv.innerHTML = ''; // Clear current timeline
+            timelineDiv.innerHTML = ''; // Clear previous blocks
             if (completedActivities.length === 0) {
-                timelineDiv.innerHTML = `<span class="text-gray-500 italic px-2">No activities logged for ${formatDateForDisplay(selectedDate)}.</span>`;
+                 timelineDiv.innerHTML = `<span class="text-gray-500 italic px-2">No activities logged for ${formatDateForDisplay(selectedDate)}.</span>`;
             } else {
-                // Sort activities by their start time before rendering
+                // Sort activities by start time before rendering
                 completedActivities.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
-
+                // Create and append blocks for each activity
                 completedActivities.forEach(activity => {
                     const block = document.createElement('div');
-                    block.classList.add('timeline-block', ACTIVITY_COLORS[activity.type] || 'bg-gray-300'); // Fallback color
-
+                    block.classList.add('timeline-block', ACTIVITY_COLORS[activity.type] || 'bg-gray-300'); // Apply color based on type
                     const startTimeObj = new Date(activity.startTime);
                     const formattedStartTime = formatTimeForDisplay(startTimeObj);
-
-                    // Display name and the calculated duration label
+                    // Set inner HTML for name, duration, and start time
                     block.innerHTML = `
                         <span>${activity.name} (${activity.durationLabel})</span>
                         <span class="timeline-block-time">${formattedStartTime}</span>
                     `;
                     block.title = `${activity.name} (${activity.durationLabel}) - Started: ${formattedStartTime}`; // Tooltip
-
                     timelineDiv.appendChild(block);
                 });
-                 // Scroll to the end of the timeline
-                timelineDiv.scrollLeft = timelineDiv.scrollWidth;
+                timelineDiv.scrollLeft = timelineDiv.scrollWidth; // Scroll to the end
             }
         }
 
         // --- To-Do List Functions ---
-        function renderTodos() {
-            todoListDiv.innerHTML = '';
-            if (todos.length === 0) {
-                todoListDiv.innerHTML = '<span class="text-gray-500 italic px-1">No quick thoughts added for this date.</span>';
-            } else {
-                todos.forEach((todo, index) => {
-                    const todoItem = document.createElement('div');
-                    todoItem.classList.add('todo-item');
+        /** Renders the to-do list based on the todos array for the selected date. */
+        function renderTodos() { todoListDiv.innerHTML = ''; if (todos.length === 0) { todoListDiv.innerHTML = '<span class="text-gray-500 italic px-1">No quick thoughts added for this date.</span>'; } else { todos.forEach((todo, index) => { const todoItem = document.createElement('div'); todoItem.classList.add('todo-item'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = todo.completed; checkbox.addEventListener('change', () => toggleTodoCompletion(index)); const textSpan = document.createElement('span'); textSpan.textContent = todo.text; textSpan.style.textDecoration = todo.completed ? 'line-through' : 'none'; textSpan.style.color = todo.completed ? '#9ca3af' : 'inherit'; const deleteBtn = document.createElement('button'); deleteBtn.innerHTML = '&times;'; deleteBtn.title = "Delete item"; deleteBtn.addEventListener('click', () => deleteTodoItem(index)); todoItem.appendChild(checkbox); todoItem.appendChild(textSpan); todoItem.appendChild(deleteBtn); todoListDiv.appendChild(todoItem); }); } }
+        /** Adds a new item to the to-do list for the selected date. */
+        function addTodoItem() { const text = newTodoInput.value.trim(); if (text) { todos.push({ text: text, completed: false }); newTodoInput.value = ''; renderTodos(); saveStateForDate(selectedDate); } }
+        /** Toggles the completion state of a to-do item for the selected date. */
+        function toggleTodoCompletion(index) { if (todos[index]) { todos[index].completed = !todos[index].completed; renderTodos(); saveStateForDate(selectedDate); } }
+        /** Deletes a to-do item for the selected date. */
+        function deleteTodoItem(index) { todos.splice(index, 1); renderTodos(); saveStateForDate(selectedDate); }
 
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.checked = todo.completed;
-                    checkbox.id = `todo-${index}`; // Add id for label association
-                    checkbox.addEventListener('change', () => toggleTodoCompletion(index));
+        // --- Sound Toggle ---
+        /** Updates the sound toggle button's icon and style based on the isSoundEnabled state. */
+        function updateSoundToggleVisual() {
+            soundToggleBtn.innerHTML = isSoundEnabled ? SOUND_ON_ICON : SOUND_OFF_ICON;
+            soundToggleBtn.classList.toggle('enabled', isSoundEnabled);
+        }
 
-                    const textSpan = document.createElement('label'); // Use label for better accessibility
-                    textSpan.htmlFor = `todo-${index}`; // Associate label with checkbox
-                    textSpan.textContent = todo.text;
-                    textSpan.style.textDecoration = todo.completed ? 'line-through' : 'none';
-                    textSpan.style.color = todo.completed ? '#9ca3af' : 'inherit';
-                    textSpan.style.cursor = 'pointer'; // Indicate label is clickable
-                    textSpan.classList.add('flex-grow', 'ml-2'); // Adjust spacing
+        // --- Date Markers ---
+        /** Checks localStorage for recent dates with saved data and displays them. */
+        function updateDateMarkers() {
+             dateMarkersDiv.innerHTML = 'Checking for saved data...';
+             let datesWithData = [];
+             const today = new Date();
+             const thirtyDaysAgo = new Date(today);
+             thirtyDaysAgo.setDate(today.getDate() - 30);
 
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.innerHTML = '&times;'; // Use HTML entity for 'x'
-                    deleteBtn.title = "Delete item";
-                    deleteBtn.addEventListener('click', () => deleteTodoItem(index));
+             try {
+                 // Iterate through all localStorage keys
+                 for (let i = 0; i < localStorage.length; i++) {
+                     const key = localStorage.key(i);
+                     // Check if the key matches our daily data format
+                     if (key.startsWith(LOCAL_STORAGE_PREFIX)) {
+                         const dateString = key.substring(LOCAL_STORAGE_PREFIX.length);
+                         const date = new Date(dateString + 'T00:00:00');
 
-                    todoItem.appendChild(checkbox);
-                    todoItem.appendChild(textSpan);
-                    todoItem.appendChild(deleteBtn);
-                    todoListDiv.appendChild(todoItem);
-                });
-            }
-        }
-        function addTodoItem() {
-            const text = newTodoInput.value.trim();
-            if (text) {
-                todos.push({ text: text, completed: false });
-                newTodoInput.value = ''; // Clear input field
-                renderTodos();
-                saveStateForDate(selectedDate); // Save state after adding
-            }
-        }
-        function toggleTodoCompletion(index) {
-            if (todos[index]) {
-                todos[index].completed = !todos[index].completed;
-                renderTodos();
-                saveStateForDate(selectedDate); // Save state after toggling
-            }
-        }
-        function deleteTodoItem(index) {
-            todos.splice(index, 1); // Remove item from array
-            renderTodos();
-            saveStateForDate(selectedDate); // Save state after deleting
-        }
+                         // Check if the date is valid and within the last 30 days
+                         if (!isNaN(date) && date >= thirtyDaysAgo && date <= today) {
+                             const stateJSON = localStorage.getItem(key);
+                             if (stateJSON) {
+                                 try {
+                                     const state = JSON.parse(stateJSON);
+                                     // Check if there's any meaningful data for this date
+                                     if ((state.completedActivities && state.completedActivities.length > 0) ||
+                                         (state.todos && state.todos.length > 0) ||
+                                         (state.notes && state.notes.trim() !== '')) {
+                                         datesWithData.push(dateString);
+                                     }
+                                 } catch (e) { console.error(`Error parsing data for key ${key}:`, e); }
+                             }
+                         }
+                     }
+                 }
+             } catch (e) { console.error("Error accessing localStorage:", e); dateMarkersDiv.innerHTML = '<span class="text-red-500">Error accessing storage.</span>'; return; }
+
+             datesWithData.sort().reverse(); // Sort newest first
+
+             // Display the dates with data
+             if (datesWithData.length > 0) {
+                 dateMarkersDiv.innerHTML = 'Recent days with data: ';
+                 datesWithData.forEach(dateStr => {
+                     const marker = document.createElement('span');
+                     marker.textContent = dateStr;
+                     // Optional: Make markers clickable to select the date
+                     // marker.style.cursor = 'pointer';
+                     // marker.onclick = () => { dateSelector.value = dateStr; dateSelector.dispatchEvent(new Event('change')); };
+                     dateMarkersDiv.appendChild(marker);
+                 });
+             } else {
+                 dateMarkersDiv.innerHTML = 'No data found in the last 30 days.';
+             }
+         }
 
         // --- Persistence (localStorage) ---
-
-        // NEW: Separate function to save global state
-        function saveGlobalState() {
-             const globalState = {
-                 selectedTime: totalSeconds,
-                 selectedActivity: currentActivity,
-                 isAlarmEnabled: isAlarmEnabled, // Save alarm toggle state
-                 datesWithActivity: datesWithActivity // Save dates with activity
-             };
-             try {
-                 localStorage.setItem(GLOBAL_STATE_KEY, JSON.stringify(globalState));
-             } catch (e) {
-                 console.error("Error saving global state:", e);
-                 // Avoid alerting here as it might be too frequent
-             }
-        }
-
-
+        /** Saves the current state (activities, todos, notes, custom name) for the specified date, and global settings. */
         function saveStateForDate(dateString) {
-            notes = notesArea.value; // Update notes state variable before saving
-            customActivityName = customActivityNameInput.value; // Update custom name state variable
-
-            const stateForDate = {
-                completedActivities: completedActivities,
-                notes: notes,
-                todos: todos,
-                customActivityInputValue: customActivityName // Save the input field value too
-            };
-
+            const stateForDate = { completedActivities: completedActivities, notes: notesArea.value, todos: todos, customActivityInputValue: customActivityNameInput.value };
+            // Save global settings (base duration, last activity type, sound preference)
+            const globalState = { selectedTime: totalSeconds, selectedActivity: currentActivity, soundEnabled: isSoundEnabled };
             try {
                 localStorage.setItem(LOCAL_STORAGE_PREFIX + dateString, JSON.stringify(stateForDate));
+                localStorage.setItem(GLOBAL_STATE_KEY, JSON.stringify(globalState));
                 console.log(`State saved for date: ${dateString}`);
-
-                // NEW: Update datesWithActivity list if this date now has data
-                const hasData = completedActivities.length > 0 || todos.length > 0 || notes.trim() !== '';
-                const index = datesWithActivity.indexOf(dateString);
-                if (hasData && index === -1) {
-                    datesWithActivity.push(dateString);
-                } else if (!hasData && index !== -1) {
-                    datesWithActivity.splice(index, 1); // Remove if data was deleted
-                }
-                 saveGlobalState(); // Save global state (which includes datesWithActivity)
-
-            } catch (e) {
-                console.error("Error saving state for date:", e);
-                alert("Error saving data for this date. Local storage might be full.");
-            }
+                updateDateMarkers(); // Refresh the list of dates with data
+            } catch (e) { console.error("Error saving state to localStorage:", e); alert("Error saving data. Local storage might be full."); }
         }
 
+        /** Loads the state for the specified date from localStorage, including global settings. */
         function loadStateForDate(dateString) {
             console.log(`Loading state for date: ${dateString}`);
-            // --- Load Global State First (only needs to be done once, but safe to do here) ---
-            const globalStateJSON = localStorage.getItem(GLOBAL_STATE_KEY);
-            if (globalStateJSON) {
-                try {
-                    const gs = JSON.parse(globalStateJSON);
-                    totalSeconds = gs.selectedTime || 1500;
-                    currentActivity = gs.selectedActivity || 'work';
-                    isAlarmEnabled = gs.isAlarmEnabled !== undefined ? gs.isAlarmEnabled : true; // Load alarm state, default true
-                    datesWithActivity = gs.datesWithActivity || []; // Load dates list
-
-                    // Update UI based on global state
-                    updateButtonSelection(timeIntervalsDiv, `[data-time="${totalSeconds}"]`);
-                    updateButtonSelection(activityTypesDiv, `[data-type="${currentActivity}"]`);
-                    updateAlarmToggleUI(); // Update alarm icon
-
-                } catch (e) {
-                    console.error("Error loading global state:", e);
-                    // Set defaults if loading fails
-                    totalSeconds = 1500; currentActivity = 'work'; isAlarmEnabled = true; datesWithActivity = [];
-                }
-            } else {
-                 // Set defaults if no global state saved yet
-                 totalSeconds = 1500; currentActivity = 'work'; isAlarmEnabled = true; datesWithActivity = [];
-                 updateButtonSelection(timeIntervalsDiv, `[data-time="1500"]`);
-                 updateButtonSelection(activityTypesDiv, `[data-type="work"]`);
-                 updateAlarmToggleUI();
-            }
-            currentSeconds = totalSeconds; // Reset timer display to loaded duration
-
-            // --- Load State Specific to the Date ---
             const savedStateJSON = localStorage.getItem(LOCAL_STORAGE_PREFIX + dateString);
+            const globalStateJSON = localStorage.getItem(GLOBAL_STATE_KEY);
+
+             // Load global settings first
+             if (globalStateJSON) {
+                 try {
+                     const gs = JSON.parse(globalStateJSON);
+                     totalSeconds = gs.selectedTime || 1500;
+                     currentActivity = gs.selectedActivity || 'work';
+                     // Load sound setting, default to true if not found
+                     isSoundEnabled = typeof gs.soundEnabled === 'boolean' ? gs.soundEnabled : true;
+                     currentSeconds = totalSeconds; // Set timer to base duration
+                     updateButtonSelection(timeIntervalsDiv, `[data-time="${totalSeconds}"]`);
+                     updateButtonSelection(activityTypesDiv, `[data-type="${currentActivity}"]`);
+                     updateSoundToggleVisual(); // Update sound icon
+                 } catch (e) { console.error("Error loading global state:", e); totalSeconds = 1500; currentActivity = 'work'; currentSeconds = totalSeconds; isSoundEnabled = true; updateSoundToggleVisual();}
+             } else { // Defaults if no global state saved yet
+                  totalSeconds = 1500; currentActivity = 'work'; currentSeconds = totalSeconds; isSoundEnabled = true; updateSoundToggleVisual();
+             }
+
+            // Load state specific to the selected date
             if (savedStateJSON) {
                 try {
                     const s = JSON.parse(savedStateJSON);
-                    // Ensure arrays/strings are initialized correctly if saved data is malformed
-                    completedActivities = Array.isArray(s.completedActivities) ? s.completedActivities : [];
-                    notes = typeof s.notes === 'string' ? s.notes : '';
-                    todos = Array.isArray(s.todos) ? s.todos : [];
-                    customActivityName = typeof s.customActivityInputValue === 'string' ? s.customActivityInputValue : '';
-                    console.log(`State loaded for ${dateString}. Activities: ${completedActivities.length}, Todos: ${todos.length}`);
-                } catch (e) {
-                    console.error(`Error parsing state for date ${dateString}:`, e);
-                    completedActivities = []; notes = ''; todos = []; customActivityName = '';
-                }
-            } else {
-                // No state saved for this date, reset everything
-                completedActivities = []; notes = ''; todos = []; customActivityName = '';
-                console.log(`No saved state found for ${dateString}. Initializing fresh state.`);
+                    completedActivities = s.completedActivities || [];
+                    notes = s.notes || '';
+                    todos = s.todos || [];
+                    customActivityName = s.customActivityInputValue || ''; // Load custom name saved for this day
+                    console.log(`State loaded for ${dateString}.`);
+                } catch (e) { console.error(`Error loading state from localStorage for date ${dateString}:`, e); completedActivities = []; notes = ''; todos = []; customActivityName = ''; }
+            } else { // Defaults if no saved state for this specific date
+                 completedActivities = []; notes = ''; todos = []; customActivityName = '';
+                 console.log(`No saved state found for ${dateString}, initializing defaults.`);
             }
 
-            // --- Update UI ---
-            notesArea.value = notes;
-            customActivityNameInput.value = customActivityName;
-            renderTimeline();
-            renderTodos();
-            updateDisplay(); // Update timer display, activity name etc.
-            updateDateActivityIndicator(); // NEW: Update the dot indicator
+             // Update UI elements with loaded data
+             notesArea.value = notes;
+             customActivityNameInput.value = customActivityName; // Display custom name specific to the loaded day
+             renderTimeline();
+             renderTodos();
+             updateDisplay(); // Update timer display based on loaded global settings
+             updateDateMarkers(); // Refresh date markers
         }
-
-        // --- UI Update Functions ---
-        function updateButtonSelection(container, selector) {
-            container.querySelectorAll('button').forEach(btn => btn.classList.remove('selected-button'));
-            if (selector) {
-                const buttonToSelect = container.querySelector(selector);
-                if (buttonToSelect) {
-                    buttonToSelect.classList.add('selected-button');
-                }
-            }
-        }
-
-        // NEW: Update alarm toggle button appearance
-        function updateAlarmToggleUI() {
-            const mutedIcon = alarmToggleBtn.querySelector('.icon-muted');
-            const activeIcon = alarmToggleBtn.querySelector('.icon-active');
-            if (isAlarmEnabled) {
-                alarmToggleBtn.classList.add('enabled');
-                alarmToggleBtn.title = "Disable Alarm Sound";
-                mutedIcon.style.display = 'none';
-                activeIcon.style.display = 'inline';
-            } else {
-                alarmToggleBtn.classList.remove('enabled');
-                alarmToggleBtn.title = "Enable Alarm Sound";
-                mutedIcon.style.display = 'inline';
-                activeIcon.style.display = 'none';
-            }
-        }
-
-        // NEW: Update date activity indicator
-        function updateDateActivityIndicator() {
-            if (datesWithActivity.includes(selectedDate)) {
-                dateActivityIndicator.textContent = '•';
-                dateActivityIndicator.title = `Activity logged on ${formatDateForDisplay(selectedDate)}`;
-            } else {
-                dateActivityIndicator.textContent = '';
-                dateActivityIndicator.title = `No activity logged for ${formatDateForDisplay(selectedDate)}`;
-            }
-        }
-
 
         // --- Event Listeners ---
-        startStopBtn.addEventListener('click', () => {
-            if (isRunning) {
-                stopTimer(false); // Pause the timer
-            } else {
-                startTimer(); // Start or resume the timer
-            }
+        // Start/Pause button
+        startStopBtn.addEventListener('click', () => { if (isRunning) { stopTimer(false); } else { startTimer(); } });
+        // Reset button (resets timer display/state to base duration)
+        resetTimerBtn.addEventListener('click', resetTimerDisplayAndState);
+        // Stop Early button (stops timer and logs elapsed time)
+        stopEarlyBtn.addEventListener('click', () => {
+             if (isRunning && currentTimerStartTime) {
+                 const now = new Date();
+                 const elapsedMs = now - currentTimerStartTime;
+                 const elapsedSeconds = Math.round(elapsedMs / 1000);
+                 stopTimer(false, true, elapsedSeconds); // Call stopTimer with early stop flag
+             } else if (isRunning && !currentTimerStartTime){
+                 // This case might happen if the timer was paused and resumed without a proper start time reset somewhere
+                 // Or if the timer was started before the page fully loaded the start time logic properly
+                 console.warn("Stop early pressed while running, but start time is missing. Resetting timer.");
+                 resetTimerDisplayAndState(); // Safest action is to just reset
+             }
+              else {
+                 console.log("Timer not running, cannot use Stop button.");
+             }
         });
 
-        resetBtn.addEventListener('click', resetTimer);
-        stopLogBtn.addEventListener('click', stopAndLogTimer); // NEW: Listener for Stop & Log
-
-        timeIntervalsDiv.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON' && e.target.dataset.time) {
-                 if (isRunning) {
-                     alert("Stop the timer before changing the duration.");
-                     return;
-                 }
-                 totalSeconds = parseInt(e.target.dataset.time, 10);
-                 currentSeconds = totalSeconds; // Reset countdown when duration changes
-                 updateDisplay();
-                 updateButtonSelection(timeIntervalsDiv, `[data-time="${totalSeconds}"]`);
-                 saveGlobalState(); // Save new default duration
-            }
-        });
-
-        activityTypesDiv.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON' && e.target.dataset.type) {
-                // Allow changing activity type even while running, but maybe reset start time?
-                 // For now, let's allow it without resetting timer, it just applies to the *next* log.
-                 // If you want it to apply immediately or reset, add logic here.
-                currentActivity = e.target.dataset.type;
-                updateDisplay(); // Update the activity name display
-                updateButtonSelection(activityTypesDiv, `[data-type="${currentActivity}"]`);
-                if (currentActivity === 'custom') {
-                    customActivityNameInput.focus(); // Focus input if custom is selected
-                }
-                saveGlobalState(); // Save new default activity type
-            }
-        });
-
-        // Save custom activity name as it's typed (debounced)
-        let customNameTimeout;
-        customActivityNameInput.addEventListener('input', () => {
-            customActivityName = customActivityNameInput.value; // Update state variable immediately for display
-            if (currentActivity === 'custom') {
-                 updateDisplay(); // Update timer display if it's currently 'Custom'
-            }
-            clearTimeout(customNameTimeout);
-            customNameTimeout = setTimeout(() => {
-                // Save the custom name input value to the current date's state
-                saveStateForDate(selectedDate)
-            }, 500); // Save after 500ms pause
-        });
-
-        // Save notes as they are typed (debounced)
-        let notesTimeout;
-        notesArea.addEventListener('input', () => {
-             clearTimeout(notesTimeout);
-             notesTimeout = setTimeout(() => {
-                 notes = notesArea.value; // Update state variable
-                 saveStateForDate(selectedDate); // Save notes to current date's state
-             }, 500); // Save after 500ms pause
-        });
-
+        // Helper to style selected buttons
+        function updateButtonSelection(container, selector) { container.querySelectorAll('button').forEach(btn => btn.classList.remove('selected-button')); const buttonToSelect = container.querySelector(selector); if (buttonToSelect) { buttonToSelect.classList.add('selected-button'); } }
+        // Duration selection
+        timeIntervalsDiv.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON' && e.target.dataset.time && !isRunning) { totalSeconds = parseInt(e.target.dataset.time, 10); currentSeconds = totalSeconds; updateDisplay(); updateButtonSelection(timeIntervalsDiv, `[data-time="${totalSeconds}"]`); saveStateForDate(selectedDate); } else if (isRunning) { console.log("Stop timer to change duration."); } });
+        // Activity type selection
+        activityTypesDiv.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON' && e.target.dataset.type) { currentActivity = e.target.dataset.type; updateDisplay(); updateButtonSelection(activityTypesDiv, `[data-type="${currentActivity}"]`); if (currentActivity === 'custom') { customActivityNameInput.focus(); } saveStateForDate(selectedDate); } });
+        // Custom activity name input (updates display and saves state)
+        customActivityNameInput.addEventListener('input', () => { if (currentActivity === 'custom') { updateDisplay(); } /* Debounced save */ let customNameTimeout; clearTimeout(customNameTimeout); customNameTimeout = setTimeout(() => saveStateForDate(selectedDate), 500); });
+        // Notes area input (saves state)
+        let notesTimeout; notesArea.addEventListener('input', () => { clearTimeout(notesTimeout); notesTimeout = setTimeout(() => saveStateForDate(selectedDate), 500); });
+        // Add To-Do button
         addTodoBtn.addEventListener('click', addTodoItem);
-        newTodoInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                addTodoItem();
-            }
-        });
+        // Add To-Do on Enter key
+        newTodoInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') { addTodoItem(); } });
+        // Date selector change
+        dateSelector.addEventListener('change', (e) => { if (isRunning) { alert("Please stop the current timer before changing the date."); e.target.value = selectedDate; return; } const newDate = e.target.value; if (newDate) { selectedDate = newDate; selectedDateDisplay.textContent = formatDateForDisplay(selectedDate); resetTimerDisplayAndState(); loadStateForDate(selectedDate); } });
 
-        dateSelector.addEventListener('change', (e) => {
-             if (isRunning) {
-                 alert("Please stop or pause the current timer before changing the date.");
-                 e.target.value = selectedDate; // Revert date selector
-                 return;
-             }
-             const newDate = e.target.value;
-             if (newDate && newDate !== selectedDate) {
-                 selectedDate = newDate;
-                 selectedDateDisplay.textContent = formatDateForDisplay(selectedDate);
-                 resetTimer(); // Reset timer state completely when changing date
-                 loadStateForDate(selectedDate); // Load data for the new date
-             }
-        });
-
-        // Listener for the +1m, +3m, +5m buttons
+        // Event delegation for "+ Time" buttons and Sound Toggle
         timerDisplayArea.addEventListener('click', (e) => {
-            if (e.target.classList.contains('add-time-btn') && e.target.dataset.addTime) {
-                 addTimeToTimer(parseInt(e.target.dataset.addTime, 10));
-            }
-        });
-
-        // NEW: Listener for Alarm Toggle
-        alarmToggleBtn.addEventListener('click', () => {
-            isAlarmEnabled = !isAlarmEnabled;
-            updateAlarmToggleUI();
-            saveGlobalState(); // Save the new alarm state globally
-            console.log(`Alarm sound ${isAlarmEnabled ? 'enabled' : 'disabled'}.`);
-            // Optional: Play a short sound on toggle to confirm state change
-            if (isAlarmEnabled) unlockAudio(); // Try to unlock if enabling
+             // Handle add time buttons
+             const addTimeButton = e.target.closest('.add-time-btn');
+             if (addTimeButton && addTimeButton.dataset.addTime) {
+                 addTimeToTimer(parseInt(addTimeButton.dataset.addTime, 10));
+             }
+             // Handle sound toggle button
+             const toggleButton = e.target.closest('#sound-toggle');
+             if (toggleButton) {
+                 isSoundEnabled = !isSoundEnabled;
+                 updateSoundToggleVisual();
+                 saveStateForDate(selectedDate); // Save the updated global state (including sound pref)
+                 console.log("Sound enabled:", isSoundEnabled);
+                 // Ensure synth is ready if user enables sound, potentially starting audio context
+                 if (isSoundEnabled) {
+                      setupAlarmSynth(); // Re-run setup to ensure synth exists and context is started if needed
+                 }
+             }
         });
 
         // --- Initial Load ---
+        /** Runs when the page content is fully loaded. */
         document.addEventListener('DOMContentLoaded', () => {
-            selectedDate = getTodayDateString(); // Ensure we start on today
-            dateSelector.value = selectedDate; // Set date input to today
+            selectedDate = getTodayDateString(); // Set to today initially
+            dateSelector.value = selectedDate; // Set date picker value
             dateSelector.max = selectedDate; // Prevent selecting future dates
-            selectedDateDisplay.textContent = formatDateForDisplay(selectedDate);
-            loadStateForDate(selectedDate); // Load today's state (includes loading global state)
-
-            // Initial UI setup based on loaded state
-            updateDisplay();
-            updateAlarmToggleUI();
-            updateDateActivityIndicator();
+            selectedDateDisplay.textContent = formatDateForDisplay(selectedDate); // Display formatted date
+            loadStateForDate(selectedDate); // Load today's state (or defaults)
+            setupAlarmSynth(); // Initialize the audio synth
+            updateSoundToggleVisual(); // Set initial sound icon state
+            updateDateMarkers(); // Show initial list of dates with data
         });
 
     </script>
