@@ -214,29 +214,69 @@
 
         // --- Tone.js Setup ---
         /**
+         * Handles UI updates when audio initialization (Tone.js context or synth) fails.
+         * Disables sound, updates toggle icon, disables button, and shows an error message.
+         * @param {string} errorMessage - The error message to log and potentially display.
+         */
+        function handleAudioInitializationError(errorMessage) {
+            console.error("Audio Initialization Error:", errorMessage); // Keep console log
+            isSoundEnabled = false; // Force sound to be "disabled" as it's not working
+            updateSoundToggleVisual(); // Update icon to "off"
+
+            // Disable the button and add a title to explain why
+            soundToggleBtn.disabled = true;
+            soundToggleBtn.title = "Audio system failed to initialize. Please refresh or try a different browser.";
+
+            // Optionally, display a small message near the toggle button
+            let errorDisplay = document.getElementById('audio-error-message');
+            if (!errorDisplay) {
+                errorDisplay = document.createElement('p');
+                errorDisplay.id = 'audio-error-message';
+                errorDisplay.style.color = 'red';
+                errorDisplay.style.fontSize = '0.75rem';
+                errorDisplay.style.maxWidth = '150px'; // Adjust as needed
+                // Insert it after the soundToggleBtn or in a suitable place
+                soundToggleBtn.parentNode.insertBefore(errorDisplay, soundToggleBtn.nextSibling);
+            }
+            errorDisplay.textContent = "Audio init failed."; // Short message
+        }
+
+        /**
          * Initializes the Tone.js synthesizer for the alarm sound.
          * Attempts to start the audio context if not already running.
          */
         function setupAlarmSynth() {
             try {
                 if (Tone.context.state !== 'running') {
-                    // Tone.start() returns a Promise that resolves when the context is running.
                     Tone.start().then(() => {
-                        console.log("Audio context started by Tone.js");
-                        // Create the synth *after* the context is confirmed running.
-                        if (!alarmSynth) { // Avoid creating multiple synths
-                           alarmSynth = new Tone.Synth().toDestination();
+                        console.log("Audio context started by Tone.js successfully.");
+                        if (!alarmSynth) {
+                           try {
+                               alarmSynth = new Tone.Synth().toDestination();
+                               console.log("Alarm synth created successfully after Tone.start().");
+                           } catch (e) {
+                               // console.error("Failed to create Tone.Synth in setupAlarmSynth after Tone.start():", e); // Already logged
+                               handleAudioInitializationError("Synth creation failed: " + e.message);
+                           }
                         }
-                    }).catch(e => console.error("Error starting Tone.js audio context:", e));
+                    }).catch(e => {
+                        // console.error("Error starting Tone.js audio context via Tone.start():", e); // Already logged by new function
+                        handleAudioInitializationError("Tone.start() failed: " + e.message);
+                    });
                 } else {
-                    // If context is already running, just create the synth.
                     if (!alarmSynth) {
-                       alarmSynth = new Tone.Synth().toDestination();
+                       try {
+                           alarmSynth = new Tone.Synth().toDestination();
+                           console.log("Alarm synth created successfully (context already running).");
+                       } catch (e) {
+                           // console.error("Failed to create Tone.Synth in setupAlarmSynth (context already running):", e); // Already logged
+                           handleAudioInitializationError("Synth creation failed (context already running): " + e.message);
+                       }
                     }
                 }
             } catch (e) {
-                 console.error("Error setting up Tone.js synth:", e);
-                 // Handle potential errors during synth creation
+                 console.error("General error in setupAlarmSynth:", e); // This might be redundant if inner errors are caught
+                 handleAudioInitializationError("General setup error: " + e.message);
             }
         }
 
@@ -244,24 +284,62 @@
          * Plays the alarm sound if enabled and the synth is ready.
          */
         function playAlarmSound() {
-             if (isSoundEnabled && alarmSynth && Tone.context.state === 'running') {
+             if (!isSoundEnabled) {
+                 console.log("Sound is disabled by user setting.");
+                 return;
+             }
+
+             // Attempt to start audio context if not running (requires user gesture)
+             if (Tone.context.state !== 'running') {
+                 console.warn("Audio context not running when playAlarmSound was called. Attempting to start.");
+                 Tone.start().then(() => {
+                     console.log("Audio context started on demand for alarm.");
+                     // Ensure synth is created if it wasn't
+                     if (!alarmSynth) {
+                         try {
+                             alarmSynth = new Tone.Synth().toDestination();
+                             console.log("Alarm synth created on demand in playAlarmSound.");
+                         } catch (e) {
+                             // console.error("Failed to create Tone.Synth on demand in playAlarmSound:", e); // Already logged
+                             handleAudioInitializationError("On-demand synth creation failed: " + e.message);
+                             return; // Exit if synth creation fails
+                         }
+                     }
+                     // Now try to play
+                     if (alarmSynth) {
+                        try {
+                            alarmSynth.triggerAttackRelease("C5", "0.5s", Tone.now());
+                            console.log("Alarm played after on-demand context start.");
+                        } catch (e) {
+                            console.error("Error playing alarm sound after on-demand context start:", e);
+                        }
+                     }
+                 }).catch(e => {
+                     // console.error("Error starting Tone.js audio context on demand in playAlarmSound:", e); // Already logged
+                     handleAudioInitializationError("On-demand Tone.start() failed: " + e.message);
+                 });
+                 return; // Exit after attempting to start context
+             }
+
+             // If context is running, proceed to play
+             if (alarmSynth) {
                  try {
-                     alarmSynth.triggerAttackRelease("C5", "0.5s", Tone.now()); // Use Tone.now() for precise timing
-                     console.log("Alarm played");
+                     alarmSynth.triggerAttackRelease("C5", "0.5s", Tone.now());
+                     console.log("Alarm played (synth existed, context running).");
                  } catch (e) {
-                      console.error("Error playing alarm sound:", e);
+                      console.error("Error playing alarm sound with existing synth:", e);
                  }
-             } else if (!isSoundEnabled) {
-                 console.log("Sound is disabled.");
              } else {
-                 console.warn("Could not play alarm: Synth not ready or audio context not running.");
-                 // Optionally try to start context again if needed (might require user interaction)
-                 if (Tone.context.state !== 'running') {
-                     Tone.start().then(() => {
-                         console.log("Audio context started on demand for alarm.");
-                         if (!alarmSynth) alarmSynth = new Tone.Synth().toDestination();
-                         if (isSoundEnabled && alarmSynth) alarmSynth.triggerAttackRelease("C5", "0.5s", Tone.now());
-                     }).catch(e => console.error("Error starting Tone.js audio context on demand:", e));
+                 console.warn("Could not play alarm: Synth not ready, even though context is running. Attempting to create synth.");
+                 // Attempt to create synth if it's missing but context is running
+                 try {
+                     alarmSynth = new Tone.Synth().toDestination();
+                     console.log("Alarm synth created just before playing (context was running).");
+                     alarmSynth.triggerAttackRelease("C5", "0.5s", Tone.now());
+                     console.log("Alarm played after creating synth (context was running).");
+                 } catch (e) {
+                     // console.error("Failed to create or play synth even when context is running:", e);
+                     handleAudioInitializationError("Synth creation/play failed (context running): " + e.message);
                  }
              }
         }
@@ -626,14 +704,18 @@
              }
              // Handle sound toggle button
              const toggleButton = e.target.closest('#sound-toggle');
-             if (toggleButton) {
+             if (toggleButton) { // This will still be true even if button is disabled
+                 // Check if button is disabled before processing
+                 if (toggleButton.disabled) {
+                     console.log("Sound toggle is disabled due to audio system error.");
+                     return; 
+                 }
                  isSoundEnabled = !isSoundEnabled;
                  updateSoundToggleVisual();
-                 saveStateForDate(selectedDate); // Save the updated global state (including sound pref)
+                 saveStateForDate(selectedDate); 
                  console.log("Sound enabled:", isSoundEnabled);
-                 // Ensure synth is ready if user enables sound, potentially starting audio context
                  if (isSoundEnabled) {
-                      setupAlarmSynth(); // Re-run setup to ensure synth exists and context is started if needed
+                      setupAlarmSynth(); 
                  }
              }
         });
