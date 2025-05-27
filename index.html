@@ -86,11 +86,11 @@
         <div class="mb-6 border-b pb-4">
             <div class="flex justify-between items-center mb-2">
                  <h2 class="text-lg font-semibold text-gray-700">
-                    Activity Timeline for: <span id="selected-date-display" class="font-bold text-blue-600"></span>
+                    Timeline di attività per il giorno: <span id="selected-date-display" class="font-bold text-blue-600"></span>
                  </h2>
                  <input type="date" id="date-selector">
             </div>
-             <div id="date-markers">Loading markers...</div>
+             <div id="date-markers">Carica storico attività...</div>
             <div id="timeline" class="w-full bg-gray-100 p-2 rounded overflow-x-auto whitespace-nowrap min-h-[65px] mt-2">
                 </div>
         </div>
@@ -123,47 +123,50 @@
                             </div>
                             <div class="flex flex-col gap-2 w-28">
                                 <button class="add-time-btn font-bold text-xl" data-add-time="60">+1m</button>
-                                <button class="add-time-btn font-bold text-xl" data-add-time="180">+3m</button>
                                 <button class="add-time-btn font-bold text-xl" data-add-time="300">+5m</button>
+                                <button class="add-time-btn font-bold text-xl" data-add-time="600">+10m</button>
                              </div>
                         </div>
                     </div> <div class="flex-shrink-0 bg-white p-4 rounded-lg shadow-sm border border-gray-100 sm:w-36">
-                        <h3 class="font-semibold mb-2 text-gray-700">Duration</h3>
+                        <h3 class="font-semibold mb-2 text-gray-700">Durata</h3>
                         <div id="time-intervals" class="space-y-2">
-                            <button data-time="10" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">10 sec</button>
-                            <button data-time="600" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">10 min</button>
+                            <button data-time="300" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">5 min</button>
                             <button data-time="900" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">15 min</button>
-                            <button data-time="1200" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">20 min</button>
-                            <button data-time="1500" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out selected-button">25 min</button>
                             <button data-time="1800" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">30 min</button>
-                            <button data-time="2700" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">45 min</button>
+                            <button data-time="2700" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out selected-button">45 min</button>
                             <button data-time="3600" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">60 min</button>
+                            <button data-time="5400" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">90 min</button>
+                            <button data-time="7200" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">120 min</button>
+                            <button data-time="10800" class="w-full text-left p-2 rounded hover:bg-gray-100 transition duration-150 ease-in-out">180 min</button>
                         </div>
                     </div>
                 </div> <div class="mt-4 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                    <h3 class="font-semibold mb-2 text-gray-700">Activity Type</h3>
+                    <h3 class="font-semibold mb-2 text-gray-700">Tipo di Attività</h3>
                     <div id="activity-types" class="flex flex-wrap gap-2">
-                        <button data-type="work" class="bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out selected-button">Work</button>
+                        <button data-type="work" class="bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out selected-button">Studio</button>
                         <button data-type="relax" class="bg-red-200 hover:bg-red-300 text-red-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Relax</button>
-                        <button data-type="free" class="bg-blue-200 hover:bg-blue-300 text-blue-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Free</button>
-                        <button data-type="custom" class="bg-purple-200 hover:bg-purple-300 text-purple-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Custom</button>
+                        <button data-type="free" class="bg-blue-200 hover:bg-blue-300 text-blue-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Tempo Libero</button>
+                        <button data-type="pranzo" class="bg-orange-200 hover:bg-orange-300 text-orange-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Pranzo</button>
+                        <button data-type="merenda" class="bg-teal-200 hover:bg-teal-300 text-teal-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Merenda</button>
+                        <button data-type="cena" class="bg-indigo-200 hover:bg-indigo-300 text-indigo-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Cena</button>
+                        <button data-type="custom" class="bg-purple-200 hover:bg-purple-300 text-purple-800 font-medium py-2 px-4 rounded-lg transition duration-150 ease-in-out">Personalizza</button>
                     </div>
                     <div class="mt-3">
-                         <label for="custom-activity-name" class="block text-sm font-medium text-gray-600 mb-1">Custom Activity Name:</label>
-                         <input type="text" id="custom-activity-name" placeholder="e.g., Planning, Reading" class="p-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500">
+                         <label for="custom-activity-name" class="block text-sm font-medium text-gray-600 mb-1">Nome attività:</label>
+                         <input type="text" id="custom-activity-name" placeholder="ex., Lettura, Musica..." class="p-2 border border-gray-300 rounded-lg w-full focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
             </div> <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h3 class="font-semibold mb-3 text-gray-700">What comes to mind?</h3>
+                <h3 class="font-semibold mb-3 text-gray-700">Cosa devi fare</h3>
                 <div id="todo-list" class="mb-3 overflow-y-auto pr-2">
                     </div>
                 <div class="flex gap-2">
-                    <input type="text" id="new-todo-input" placeholder="Add a quick thought..." class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                    <button id="add-todo-btn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Add</button>
+                    <input type="text" id="new-todo-input" placeholder="Aggiungi promemoria..." class="flex-grow p-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    <button id="add-todo-btn" class="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-150 ease-in-out">Aggiungi</button>
                 </div>
             </div> </div> <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-            <h2 class="text-lg font-semibold mb-2 text-gray-700">Notes</h2>
-            <textarea id="notes-area" rows="6" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Write your notes here for the selected date..."></textarea>
+            <h2 class="text-lg font-semibold mb-2 text-gray-700">Cosa ti viene in mente</h2>
+            <textarea id="notes-area" rows="6" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500" placeholder="Scrivi a cosa stai pensando..."></textarea>
         </div>
 
     </div> <script>
@@ -204,7 +207,7 @@
         let alarmSynth = null; // Tone.js synth instance
 
         // --- Constants ---
-        const ACTIVITY_COLORS = { work: 'timeline-work', relax: 'timeline-relax', free: 'timeline-free', custom: 'timeline-custom' };
+        const ACTIVITY_COLORS = { work: 'timeline-work', relax: 'timeline-relax', free: 'timeline-free', custom: 'timeline-custom', pranzo: 'bg-orange-500', merenda: 'bg-teal-500', cena: 'bg-indigo-500' };
         const LOCAL_STORAGE_PREFIX = 'pomodoroAppState_'; // Prefix for daily data keys
         const GLOBAL_STATE_KEY = 'pomodoroGlobalState'; // Key for global settings
         const SCREEN_FLASH_DURATION = 3000; // Milliseconds for screen flash
@@ -281,7 +284,7 @@
         /** Gets today's date as a YYYY-MM-DD string. */
         function getTodayDateString() { const today = new Date(); const year = today.getFullYear(); const month = String(today.getMonth() + 1).padStart(2, '0'); const day = String(today.getDate()).padStart(2, '0'); return `${year}-${month}-${day}`; }
         /** Formats a YYYY-MM-DD string for display (e.g., "Monday, April 28, 2025"). */
-        function formatDateForDisplay(dateString) { const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
+        function formatDateForDisplay(dateString) { const date = new Date(dateString + 'T00:00:00'); return date.toLocaleDateString('it-IT', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }); }
         /** Formats a Date object for time display (e.g., "01:15 PM"). */
         function formatTimeForDisplay(date) { if (!date) return ''; return date.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }); }
 
@@ -347,7 +350,7 @@
             // Record start time only if it's a fresh start (not resuming pause)
             if (!currentTimerStartTime) { currentTimerStartTime = new Date(); }
 
-            startStopBtn.textContent = 'Pause'; // Change button text
+            startStopBtn.textContent = 'Pausa'; // Change button text
             startStopBtn.classList.remove('bg-blue-500', 'hover:bg-blue-600'); startStopBtn.classList.add('bg-red-500', 'hover:bg-red-600');
             timerDisplayArea.classList.add('timer-active'); // Add visual indicator
             updateDisplay(); // Update display immediately
@@ -446,7 +449,44 @@
 
         // --- To-Do List Functions ---
         /** Renders the to-do list based on the todos array for the selected date. */
-        function renderTodos() { todoListDiv.innerHTML = ''; if (todos.length === 0) { todoListDiv.innerHTML = '<span class="text-gray-500 italic px-1">No quick thoughts added for this date.</span>'; } else { todos.forEach((todo, index) => { const todoItem = document.createElement('div'); todoItem.classList.add('todo-item'); const checkbox = document.createElement('input'); checkbox.type = 'checkbox'; checkbox.checked = todo.completed; checkbox.addEventListener('change', () => toggleTodoCompletion(index)); const textSpan = document.createElement('span'); textSpan.textContent = todo.text; textSpan.style.textDecoration = todo.completed ? 'line-through' : 'none'; textSpan.style.color = todo.completed ? '#9ca3af' : 'inherit'; const deleteBtn = document.createElement('button'); deleteBtn.innerHTML = '&times;'; deleteBtn.title = "Delete item"; deleteBtn.addEventListener('click', () => deleteTodoItem(index)); todoItem.appendChild(checkbox); todoItem.appendChild(textSpan); todoItem.appendChild(deleteBtn); todoListDiv.appendChild(todoItem); }); } }
+        function renderTodos() {
+            // Sort todos: completed items first, then by original relative order.
+            todos.sort((a, b) => {
+                if (a.completed && !b.completed) {
+                    return -1; // Completed 'a' comes before uncompleted 'b'
+                }
+                if (!a.completed && b.completed) {
+                    return 1; // Uncompleted 'a' comes after completed 'b'
+                }
+                return 0; // Otherwise, maintain original relative order
+            });
+
+            todoListDiv.innerHTML = '';
+            if (todos.length === 0) {
+                todoListDiv.innerHTML = '<span class="text-gray-500 italic px-1">Non hai ancora aggiunto nulla</span>';
+            } else {
+                todos.forEach((todo, index) => {
+                    const todoItem = document.createElement('div');
+                    todoItem.classList.add('todo-item');
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = todo.completed;
+                    checkbox.addEventListener('change', () => toggleTodoCompletion(index));
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = todo.text;
+                    textSpan.style.textDecoration = todo.completed ? 'line-through' : 'none';
+                    textSpan.style.color = todo.completed ? '#9ca3af' : 'inherit';
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.innerHTML = '&times;';
+                    deleteBtn.title = "Delete item";
+                    deleteBtn.addEventListener('click', () => deleteTodoItem(index));
+                    todoItem.appendChild(checkbox);
+                    todoItem.appendChild(textSpan);
+                    todoItem.appendChild(deleteBtn);
+                    todoListDiv.appendChild(todoItem);
+                });
+            }
+        }
         /** Adds a new item to the to-do list for the selected date. */
         function addTodoItem() { const text = newTodoInput.value.trim(); if (text) { todos.push({ text: text, completed: false }); newTodoInput.value = ''; renderTodos(); saveStateForDate(selectedDate); } }
         /** Toggles the completion state of a to-do item for the selected date. */
@@ -502,7 +542,7 @@
 
              // Display the dates with data
              if (datesWithData.length > 0) {
-                 dateMarkersDiv.innerHTML = 'Recent days with data: ';
+                 dateMarkersDiv.innerHTML = 'Giorni con attività di recente: ';
                  datesWithData.forEach(dateStr => {
                      const marker = document.createElement('span');
                      marker.textContent = dateStr;
